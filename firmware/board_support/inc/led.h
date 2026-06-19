@@ -1,7 +1,14 @@
 #ifndef LED_H
 #define LED_H
 
+/** @defgroup bsp BSP
+ *  @brief Capa de board support package.
+ *  @{
+ */
+
 /** \brief LED driver for the custom board.
+ *
+ * @ingroup bsp
  *
  * @note Custom board have 3 LEDs LED_1: green, LED_2: yellow, LED_3: red
  * 
@@ -77,6 +84,8 @@ uint8_t LedsOffAll(void);
  * @return uint8_t 
  */
 uint8_t LedsMask(uint8_t mask);
+
+/** @} */
 
 #endif /* #ifndef LED_H */
 

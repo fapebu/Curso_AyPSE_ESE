@@ -1,7 +1,14 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+/** @defgroup middleware Middleware
+ *  @brief Capa de servicios logicos intermedios.
+ *  @{
+ */
+
 /** \brief Animation driver .
+ *
+ * @ingroup middleware
  * 
  * @author Albano Peñalva
  *
@@ -48,6 +55,8 @@ uint8_t AnimationInit(void);
  * @param anim The animation type to execute.
  */
 void AnimationRunStep(animation_t anim);
+
+/** @} */
 
 #endif /* #ifndef ANIMATION_H */
 

@@ -1,7 +1,14 @@
 #ifndef GPIO_MCU_H
 #define GPIO_MCU_H
 
+/** @defgroup hal HAL
+ *  @brief Capa de abstraccion de hardware.
+ *  @{
+ */
+
 /** \brief GPIO driver for the ESP32-C6 Board.
+ *
+ * @ingroup hal
  *
  * This driver provide functions to configure and handle the ESP32-C6 General
  * Purpose Input-Outputs .
@@ -133,6 +140,8 @@ void GPIOActivInt(gpio_t pin, void *ptr_int_func, bool edge, void *args);
  * 
  */
 void GPIODeinit(void);
+
+/** @} */
 
 #endif /* INC_GPIO_H_ */
 
