@@ -1,10 +1,17 @@
-#ifndef GPIO_MCU_H
-#define GPIO_MCU_H
+#ifndef GPIO_HAL_H
+#define GPIO_HAL_H
 
-/** \brief GPIO driver for the ESP32-C6 Board.
+/** @defgroup hal HAL
+ *  @brief Hardware Abstraction Layer.
+ *  @{
+ *  @defgroup gpio_hal GPIO HAL
+ *  @brief GPIO driver for ESP32-C6.
+ *  @{
+ * 
+ * @section genDesc General Description
  *
  * This driver provide functions to configure and handle the ESP32-C6 General
- * Purpose Input-Outputs .
+ * Purpose Input-Outputs.
  * 
  * @note GPIO_12 and GPIO_13 are not recommended for use, because using them will
  * overwrite the flash and debug functionalities via USB.
@@ -134,6 +141,9 @@ void GPIOActivInt(gpio_t pin, void *ptr_int_func, bool edge, void *args);
  */
 void GPIODeinit(void);
 
-#endif /* INC_GPIO_H_ */
+/** @} */
+/** @} */
+
+#endif /* #ifndef GPIO_HAL_H */
 
 /*==================[end of file]============================================*/

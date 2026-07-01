@@ -1,9 +1,24 @@
 #ifndef LED_H
 #define LED_H
 
-/** \brief LED driver for the custom board.
+/** @defgroup bsp BSP
+ *  @brief Board support package layer.
+ *  @{
+ *  @defgroup led_bsp LED BSP
+ *  @brief LEDs driver for the development board.
+ *  @{
  *
- * @note Custom board have 3 LEDs LED_1: green, LED_2: yellow, LED_3: red
+ * @section genDesc General Description
+ * 
+ * Custom board have 3 LEDs LED_1: green, LED_2: yellow, LED_3: red
+ * 
+ * @section Hardware_connection Hardware connection:
+ * 
+ * |    Component Pin   |   ESP32-C6 GPIO   |
+ * |:------------------:|:-----------------:|
+ * |       LED_3        |      GPIO_6       |
+ * |       LED_2        |      GPIO_5       |
+ * |       LED_1        |      GPIO_4       |
  * 
  * @author Albano Peñalva
  *
@@ -11,7 +26,7 @@
  *
  * |   Date	    | Description                                    						|
  * |:----------:|:----------------------------------------------------------------------|
- * | 23/10/2023 | Document creation		                         						|
+ * | 23/06/2026 | Document creation		                         						|
  * 
  **/
 
@@ -77,6 +92,9 @@ uint8_t LedsOffAll(void);
  * @return uint8_t 
  */
 uint8_t LedsMask(uint8_t mask);
+
+/** @} */
+/** @} */
 
 #endif /* #ifndef LED_H */
 

@@ -1,7 +1,17 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
-/** \brief Animation driver .
+/** @defgroup middleware Middleware
+ *  @brief Layer of intermediate logical services.
+ *  @{
+ *  @defgroup animation_middleware Animation Middleware
+ *  @brief LEDs animation driver.
+ *  @{
+ * 
+ * @section genDesc General Description
+ * 
+ * This middleware provides a set of animation functions for the LEDs on the board.
+ * It allows you to create different animation patterns for the LEDs.
  * 
  * @author Albano Peñalva
  *
@@ -48,6 +58,9 @@ uint8_t AnimationInit(void);
  * @param anim The animation type to execute.
  */
 void AnimationRunStep(animation_t anim);
+
+/** @} */
+/** @} */
 
 #endif /* #ifndef ANIMATION_H */
 

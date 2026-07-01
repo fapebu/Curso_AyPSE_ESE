@@ -21,6 +21,7 @@ El mismo está pensado para ser utilizado con la placa ESP32-C6-DevKitC-1.
 5. [Proyecto nuevo](./documentación/proyecto_nuevo.md)
 6. [Actualización de Repositorio](./documentación/repositorio2.md)
 7. [Estructura de Firmware](./firmware/README.md)
+8. [Guía de Estilo de Código](./documentación/guia_de_estilo.md)
 
 ## Enlaces de Interés
 
