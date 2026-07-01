@@ -7,9 +7,6 @@
             "path": "./apps/0_test_runner"
         },
         {
-            "path": "./apps/0_trace_runner"
-        },
-        {
             "path": "./apps/x_template"
         },
         {
