@@ -17,9 +17,9 @@ void app_main(void)
     unity_run_tests_by_tag("[gpio]", false);
     UNITY_END();
 
-    printf("Running tests without [fails] tag");
+    printf("Running tests without [led] tag");
     UNITY_BEGIN();
-    unity_run_tests_by_tag("[fails]", true);
+    unity_run_tests_by_tag("[led]", true);
     UNITY_END();
 
     printf("Running all the registered tests");

@@ -17,12 +17,6 @@ La función central del runner en este proyecto es `unity_run_menu()`, que:
 - Reporta `PASS` / `FAIL` por UART para cada caso.
 - Muestra un resumen final con conteo de éxitos y fallos.
 
-`unity_run_menu()` no está en este repositorio: vive dentro del componente Unity de la instalación local de ESP-IDF. Para ubicarla en tu entorno:
-
-```powershell
-Get-ChildItem -Path "$env:IDF_PATH\components\unity" -Recurse -File |
-    Select-String -Pattern "unity_run_menu"
-```
 
 ---
 
