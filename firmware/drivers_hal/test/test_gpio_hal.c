@@ -7,7 +7,6 @@ TEST_CASE("GPIOInit configures output pin without error", "[drivers_hal][gpio]")
     TEST_ASSERT_TRUE(true);
 }
 
-
 TEST_CASE("GPIOOn and GPIORead return high", "[drivers_hal][gpio]")
 {
     GPIOInit(GPIO_4, GPIO_OUTPUT);
@@ -50,6 +49,6 @@ TEST_CASE("GPIOInit and GPIORead do not crash on valid pins", "[drivers_hal][gpi
 {
     GPIOInit(GPIO_9, GPIO_INPUT);
     (void)GPIORead(GPIO_9);
-    // Si llega aqui, no hubo hard fault ni watchdog reset.
+    // If execution reaches here, no hard fault or watchdog reset occurred.
     TEST_ASSERT_TRUE(true);
 }

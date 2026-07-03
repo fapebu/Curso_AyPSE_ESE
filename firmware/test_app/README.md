@@ -1,91 +1,112 @@
-# Test Runner (Unity + ESP-IDF)
+# Test App (Unity + ESP-IDF)
 
-Proyecto dedicado a pruebas unitarias e integración de drivers y BSP usando Unity en target ESP32-C6.
-
----
-
-## Qué es Unity
-
-Unity es un framework de testing unitario para C, diseñado para microcontroladores y sistemas embebidos. Es liviano, portable, y no requiere sistema operativo.
-
-ESP-IDF lo integra de forma nativa como componente (`$IDF_PATH/components/unity`), extendiendo la librería base con soporte para ejecución en target real mediante UART, menú interactivo de pruebas y registro de casos con macros.
-
-La función central del runner en este proyecto es `unity_run_menu()`, que:
-
-- Lista todos los `TEST_CASE` registrados en el firmware.
-- Permite ejecutarlos todos con `*` o filtrar por tag con `[tag]`.
-- Reporta `PASS` / `FAIL` por UART para cada caso.
-- Muestra un resumen final con conteo de éxitos y fallos.
-
+Proyecto dedicado a ejecutar tests de firmware en target ESP32-C6 usando Unity.
 
 ---
 
-## Cómo funciona el proyecto
+## Que es Unity
+
+Unity es un framework de testing unitario para C, pensado para microcontroladores y sistemas embebidos. Es liviano, portable y no requiere sistema operativo.
+
+ESP-IDF lo integra de forma nativa como componente (`$IDF_PATH/components/unity`) y extiende su uso para target real con:
+
+- registro de casos con `TEST_CASE`
+- menu interactivo por UART
+- ejecucion por nombre, indice o tags
+
+En este proyecto la funcion central del runner es `unity_run_menu()`, que:
+
+- lista todos los `TEST_CASE` registrados
+- permite ejecutar todo con `*` o filtrar por `[tag]`
+- reporta `PASS` / `FAIL` por UART
+- muestra resumen final de ejecucion
+
+## Objetivo
+
+Este proyecto funciona como harness de test:
+
+- Inicializa el menu interactivo de Unity con `unity_run_menu()`.
+- Descubre y ejecuta los `TEST_CASE` registrados por los componentes.
+- No contiene logica de producto.
+
+## Estructura actual
+
+```text
+firmware/
+├── test_app/
+│   ├── CMakeLists.txt
+│   └── main/
+│       ├── CMakeLists.txt
+│       └── test_app_main.c
+├── board_support/
+│   ├── CMakeLists.txt
+│   ├── src/
+│   └── test/
+│       └── test_led.c
+└── drivers_hal/
+    ├── CMakeLists.txt
+    ├── src/
+    └── test/
+        └── test_gpio_hal.c
+```
+
+## Como funciona el proyecto
 
 ### Flujo general
 
-```
-CMakeLists.txt (raíz del proyecto)
-│
-├── EXTRA_COMPONENT_DIRS → middleware, board_support, drivers_hal, test
-│
-├── main/test_runner.c      ← app_main() llama unity_run_menu()
-│
-└── test/
-    ├── drivers_hal/test_gpio_hal.c   ← TEST_CASE de HAL
-    └── board_support/test_led.c      ← TEST_CASE de BSP
+```text
+test_app/CMakeLists.txt (raiz del proyecto)
+|
+|-- EXTRA_COMPONENT_DIRS -> middleware, board_support, drivers_hal
+|
+|-- test_app/main/test_app_main.c      <- app_main() llama unity_run_menu()
+|
+|-- board_support/CMakeLists.txt       <- agrega board_support/test/test_led.c en modo test
+|
+`-- drivers_hal/CMakeLists.txt         <- agrega drivers_hal/test/test_gpio_hal.c en modo test
 ```
 
 ### Secuencia de eventos
 
-1. Se selecciona `apps/0_test_runner` como proyecto activo en VS Code / ESP-IDF.
-2. CMake procesa `CMakeLists.txt` e incorpora los componentes externos con `EXTRA_COMPONENT_DIRS`.
-3. Se compilan `main/test_runner.c` y todos los archivos en `test/` que contienen `TEST_CASE`.
-4. Al arrancar el firmware, ESP-IDF invoca `app_main()`.
-5. `app_main()` reconfigura el watchdog (timeout largo, sin monitoreo del idle) y llama `unity_run_menu()`.
-6. El menu queda activo en UART esperando input del usuario.
+1. Se selecciona `test_app` como proyecto activo en VS Code / ESP-IDF.
+2. CMake incorpora los componentes por `EXTRA_COMPONENT_DIRS`.
+3. Cada componente agrega su carpeta `test/` solo para proyectos de test.
+4. Al arrancar firmware, ESP-IDF invoca `app_main()`.
+5. `app_main()` desactiva TWDT y llama `unity_run_menu()`.
+6. El menu queda activo por UART esperando input del usuario.
 
----
+## Como se integran los tests
 
-## Cambios de configuración y CMake realizados
+- `board_support` y `drivers_hal` son dueños de sus tests.
+- Cada componente agrega sus fuentes de test local solo cuando el proyecto activo es de test.
+- `test_app` incluye esos componentes y muestra el menu de Unity por UART.
 
-1. Se creó una app dedicada de testing al mismo nivel que las apps funcionales:
-   - `apps/0_test_runner`
+## Incorporacion de testing en la arquitectura
 
-2. Se definió el proyecto ESP-IDF con CMake propio:
-   - Archivo: `apps/0_test_runner/CMakeLists.txt`
-   - `project(0_test_runner)` para identificar la app en el flujo de build.
+El testing se incorpora como una capacidad nueva de la plataforma con estos principios:
 
-3. Se agregaron componentes externos al proyecto de test con `EXTRA_COMPONENT_DIRS`:
-   - `../../middleware`
-   - `../../board_support`
-   - `../../drivers_hal`
-   - `test` (componente local con los casos de prueba)
+1. Existe un proyecto dedicado de ejecucion de tests: `test_app`.
+2. Cada componente mantiene sus pruebas junto a su codigo:
+   - `board_support/test/test_led.c`
+   - `drivers_hal/test/test_gpio_hal.c`
+3. Los componentes agregan fuentes de test solo cuando el proyecto activo es de testing.
+4. Los builds de produccion no incluyen fuentes de test.
 
-4. Se agregó componente `main`:
-   - Archivo: `apps/0_test_runner/main/CMakeLists.txt`
-   - `REQUIRES unity`
-   - Implementación en `apps/0_test_runner/main/test_runner.c` con `unity_run_menu()`.
+## Flujo de build y ejecucion
 
-5. Se agregó componente de tests:
-   - Archivo: `apps/0_test_runner/test/CMakeLists.txt`
-   - Registra `test/drivers_hal/test_gpio_hal.c` y `test/board_support/test_led.c`
-   - `REQUIRES unity drivers_hal board_support`
+1. Seleccionar la carpeta `test_app` como proyecto activo en VS Code.
+2. Configurar/compilar con ESP-IDF.
+3. Flashear y abrir monitor.
+4. En el menu de Unity:
+   - `*` ejecuta todos los tests.
+   - `[tag]` filtra por tag.
 
-6. Se incorporó la app al workspace de VS Code:
-   - Archivo: `AyPSE.code-workspace`
-   - Se agregó `./apps/0_test_runner` en `folders`.
+## Macros de Unity mas usadas
 
-> No se usan Makefiles manuales. El build se resuelve con CMake de ESP-IDF (`project.cmake`).
+### Afirmaciones basicas
 
----
-
-## Macros y funciones de Unity disponibles
-
-### Afirmaciones básicas
-
-| Macro | Descripción |
-|---|---|
+| Macro | Descripcion |
+| --- | --- |
 | `TEST_ASSERT_TRUE(cond)` | Falla si `cond` es falso |
 | `TEST_ASSERT_FALSE(cond)` | Falla si `cond` es verdadero |
 | `TEST_ASSERT_NULL(ptr)` | Falla si `ptr` no es NULL |
@@ -93,51 +114,44 @@ CMakeLists.txt (raíz del proyecto)
 
 ### Comparaciones de enteros
 
-| Macro | Descripción |
-|---|---|
+| Macro | Descripcion |
+| --- | --- |
 | `TEST_ASSERT_EQUAL(expected, actual)` | Compara con `==` |
 | `TEST_ASSERT_NOT_EQUAL(expected, actual)` | Compara con `!=` |
 | `TEST_ASSERT_GREATER_THAN(threshold, actual)` | `actual > threshold` |
 | `TEST_ASSERT_LESS_THAN(threshold, actual)` | `actual < threshold` |
-| `TEST_ASSERT_EQUAL_INT(e, a)` | Específico para `int` |
-| `TEST_ASSERT_EQUAL_UINT8(e, a)` | Específico para `uint8_t` |
-| `TEST_ASSERT_EQUAL_UINT16(e, a)` | Específico para `uint16_t` |
-| `TEST_ASSERT_EQUAL_UINT32(e, a)` | Específico para `uint32_t` |
-| `TEST_ASSERT_EQUAL_HEX8(e, a)` | Igual que UINT8 pero muestra en hex al fallar |
-| `TEST_ASSERT_EQUAL_HEX16(e, a)` | Idem para 16 bits |
-| `TEST_ASSERT_EQUAL_HEX32(e, a)` | Idem para 32 bits |
+| `TEST_ASSERT_EQUAL_INT(e, a)` | Especifico para `int` |
+| `TEST_ASSERT_EQUAL_UINT8(e, a)` | Especifico para `uint8_t` |
+| `TEST_ASSERT_EQUAL_UINT16(e, a)` | Especifico para `uint16_t` |
+| `TEST_ASSERT_EQUAL_UINT32(e, a)` | Especifico para `uint32_t` |
+| `TEST_ASSERT_EQUAL_HEX8(e, a)` | Igual que UINT8 pero muestra hex |
+| `TEST_ASSERT_EQUAL_HEX16(e, a)` | Igual que UINT16 pero muestra hex |
+| `TEST_ASSERT_EQUAL_HEX32(e, a)` | Igual que UINT32 pero muestra hex |
 
-### Comparaciones de floats
+### Floats
 
-| Macro | Descripción |
-|---|---|
-| `TEST_ASSERT_FLOAT_WITHIN(delta, expected, actual)` | `|actual - expected| <= delta` |
-| `TEST_ASSERT_EQUAL_FLOAT(expected, actual)` | Comparación exacta (usar con cuidado) |
+| Macro | Descripcion |
+| --- | --- |
+| `TEST_ASSERT_FLOAT_WITHIN(delta, expected, actual)` | `abs(actual - expected) <= delta` |
+| `TEST_ASSERT_EQUAL_FLOAT(expected, actual)` | Comparacion exacta |
 
-### Arreglos
+### Arreglos y strings
 
-| Macro | Descripción |
-|---|---|
+| Macro | Descripcion |
+| --- | --- |
 | `TEST_ASSERT_EQUAL_INT_ARRAY(exp, act, len)` | Compara arreglos de enteros |
 | `TEST_ASSERT_EQUAL_UINT8_ARRAY(exp, act, len)` | Compara arreglos de bytes |
-| `TEST_ASSERT_EQUAL_HEX8_ARRAY(exp, act, len)` | Idem, muestra en hex al fallar |
+| `TEST_ASSERT_EQUAL_STRING(exp, act)` | Compara strings |
+| `TEST_ASSERT_EQUAL_STRING_LEN(exp, act, len)` | Compara prefijo de largo `len` |
 
-### Strings
+### Control de flujo
 
-| Macro | Descripción |
-|---|---|
-| `TEST_ASSERT_EQUAL_STRING(exp, act)` | Compara con `strcmp` |
-| `TEST_ASSERT_EQUAL_STRING_LEN(exp, act, len)` | Compara primeros `len` caracteres |
-
-### Control de flujo dentro de un test
-
-| Macro | Descripción |
-|---|---|
-| `TEST_FAIL()` | Marca el test como fallido sin condición |
-| `TEST_FAIL_MESSAGE("msg")` | Idem con mensaje personalizado |
-| `TEST_IGNORE()` | Marca el test como ignorado (ni PASS ni FAIL) |
-| `TEST_IGNORE_MESSAGE("msg")` | Idem con mensaje |
-| `TEST_ASSERT_MESSAGE(cond, "msg")` | Como `TEST_ASSERT_TRUE` con mensaje |
+| Macro | Descripcion |
+| --- | --- |
+| `TEST_FAIL()` | Falla sin condicion |
+| `TEST_FAIL_MESSAGE("msg")` | Falla con mensaje |
+| `TEST_IGNORE()` | Marca como ignorado |
+| `TEST_IGNORE_MESSAGE("msg")` | Ignorado con mensaje |
 
 ### Registro de casos
 
@@ -148,34 +162,26 @@ TEST_CASE("descripcion legible", "[tag1][tag2]")
 }
 ```
 
-Los tags permiten filtrar desde el menu de Unity. Un caso puede tener múltiples tags.
+Los tags permiten filtrar desde el menu de Unity.
 
----
+## Como crear nuevos tests
 
-## Cómo crear nuevos tests
+### 1. Crear el archivo en el componente duenio
 
-### 1. Crear el archivo
+Ejemplos:
 
-En la carpeta correspondiente a la capa o módulo:
+- `drivers_hal/test/test_gpio_interrupt.c`
+- `board_support/test/test_bmp280_proxy.c`
 
-```
-apps/0_test_runner/test/drivers_hal/test_gpio_interrupt.c
-apps/0_test_runner/test/middleware/test_sensor_filter.c
-```
+### 2. Agregar el archivo en el CMake del componente
 
-### 2. Agregar el archivo al componente `test`
-
-En `apps/0_test_runner/test/CMakeLists.txt`, agregar en `SRCS`:
+Ejemplo en `drivers_hal/CMakeLists.txt`, dentro del bloque condicional de test:
 
 ```cmake
-idf_component_register(
-    SRCS
-        "drivers_hal/test_gpio_hal.c"
-        "drivers_hal/test_gpio_interrupt.c"   # <-- nuevo
-        "board_support/test_led.c"
-    INCLUDE_DIRS "."
-    REQUIRES unity drivers_hal board_support
-)
+if(PROJECT_NAME STREQUAL "test_app")
+    list(APPEND srcs "test/test_gpio_hal.c")
+    list(APPEND srcs "test/test_gpio_interrupt.c")
+endif()
 ```
 
 ### 3. Escribir los casos
@@ -186,42 +192,31 @@ idf_component_register(
 
 TEST_CASE("descripcion del caso", "[tag_modulo][subtag]")
 {
-    // arrange
-    // act
-    // assert
     TEST_ASSERT_TRUE(true);
 }
 ```
 
 ### 4. Compilar, flashear y ejecutar
 
-```
-idf.py build flash monitor
-```
+Usar flujo ESP-IDF del proyecto activo (`test_app`) desde VS Code.
 
-Desde el monitor, ingresar `*` para correr todos, o `[tag]` para filtrar.
+## Como ejecutar los tests
 
----
-
-## Cómo ejecutar los tests
-
-### Desde el monitor serie
-
-Una vez que el firmware arranca y muestra el menu de Unity:
+Desde el monitor serie, una vez arrancado el menu de Unity:
 
 | Comando | Efecto |
-|---|---|
-| `*` | Ejecuta todos los TEST_CASE registrados |
-| `[drivers_hal]` | Solo los casos con el tag `[drivers_hal]` |
-| `[gpio]` | Solo los casos con el tag `[gpio]` |
-| `[drivers_hal][gpio]` | Solo los que tengan ambos tags |
-| Número de caso | Ejecuta un caso específico por índice |
+| --- | --- |
+| `*` | Ejecuta todos los `TEST_CASE` |
+| `[drivers_hal]` | Solo casos con tag `[drivers_hal]` |
+| `[gpio]` | Solo casos con tag `[gpio]` |
+| `[drivers_hal][gpio]` | Solo casos que tengan ambos tags |
+| numero de caso | Ejecuta un caso por indice |
 
 ### Salida esperada
 
-```
-[0_test_runner] Unity menu ready.
-[0_test_runner] Enter '*' to run all tests or [tag] to filter.
+```text
+[test_app] Unity menu ready.
+[test_app] Enter '*' to run all tests or [tag] to filter.
 
 TEST(GPIOOn and GPIORead return high, drivers_hal) PASS
 TEST(GPIOOff and GPIORead return low, drivers_hal) PASS
@@ -231,46 +226,24 @@ TEST(GPIOOff and GPIORead return low, drivers_hal) PASS
 OK
 ```
 
----
-
 ## Cobertura actual
 
-**`drivers_hal`** — tag `[drivers_hal][gpio]`
+### `drivers_hal` - tag `[drivers_hal][gpio]`
 
 - `GPIOInit` configura pin como salida
-- `GPIOOn` / `GPIORead` → estado alto
-- `GPIOOff` / `GPIORead` → estado bajo
+- `GPIOOn` y `GPIORead` validan estado alto
+- `GPIOOff` y `GPIORead` validan estado bajo
 - `GPIOState` maneja alto y bajo
-- `GPIOToggle` invierte el estado
-- `GPIORead` en pin configurado como entrada
+- `GPIOToggle` invierte estado
+- `GPIORead` en pin de entrada sin crash
 
-**`board_support`** — tag `[board_support][led]`
+### `board_support` - tag `[board_support][led]`
 
-- `LedsInit` retorna éxito
-- `LedOn` / `LedOff` para LED_1, LED_2, LED_3
+- `LedsInit` retorna exito
+- `LedOn` y `LedOff` para LED_1, LED_2 y LED_3
 - `LedToggle` para los tres LEDs
 - `LedsOffAll` y `LedsMask`
-- Valores de LED inválidos retornan fallo
-
----
-
-## Estructura de archivos
-
-```
-apps/0_test_runner/
-├── CMakeLists.txt
-├── main/
-│   ├── CMakeLists.txt
-│   └── test_runner.c          ← app_main() con unity_run_menu()
-└── test/
-    ├── CMakeLists.txt
-    ├── drivers_hal/
-    │   └── test_gpio_hal.c
-    └── board_support/
-        └── test_led.c
-```
-
----
+- manejo de valores invalidos
 
 ## Ejemplos de tests para periféricos I2C y SPI
 
