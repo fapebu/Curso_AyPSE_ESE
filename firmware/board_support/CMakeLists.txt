@@ -2,6 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 # Always compiled source files
 set(srcs "src/led.c"
+          "src/bno086.c"
     )
 
 # Always included headers

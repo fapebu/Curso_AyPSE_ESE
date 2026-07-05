@@ -1,12 +1,5 @@
-idf_build_get_property(target IDF_TARGET)
-
-# Always compiled source files
-set(srcs "src/gpio_hal.c"
-    )
-
-# Always included headers
-set(includes "inc")
-
-idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS ${includes}
-                       PRIV_REQUIRES esp_driver_gpio)
+idf_component_register(SRCS "src/gpio_hal.c"
+                            "src/hal_bno086.c"
+                            "src/template_hal.c"
+                       INCLUDE_DIRS "inc"
+                       REQUIRES esp_driver_i2c esp_driver_gpio)
